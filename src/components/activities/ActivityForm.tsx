@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Activity, ActivityFormData, ActivityCategory } from '@/types';
+import { Activity, ActivityFormData } from '@/types';
 import { ACTIVITY_CATEGORIES, CATEGORY_CONFIG } from '@/constants/categories';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

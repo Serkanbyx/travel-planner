@@ -136,7 +136,6 @@ export function PlanDetailPage() {
 
     if (!activeData || activeData.type !== 'activity') return;
 
-    const activeActivity = activeData.activity;
     const activeId = active.id as string;
 
     // Find which day the active activity belongs to
@@ -186,7 +185,7 @@ export function PlanDetailPage() {
     }
   };
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = (_event: DragEndEvent) => {
     setActiveActivity(null);
   };
 
