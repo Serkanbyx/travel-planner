@@ -4,7 +4,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { format } from 'date-fns';
-import { Plus, Calendar } from 'lucide-react';
+import { Plus, Calendar, Trash2 } from 'lucide-react';
 import { Day, Activity } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
@@ -16,6 +16,7 @@ interface DayColumnProps {
   onAddActivity: (dayId: string) => void;
   onEditActivity: (dayId: string, activity: Activity) => void;
   onDeleteActivity: (dayId: string, activityId: string) => void;
+  onRemoveDay?: (dayId: string) => void;
 }
 
 /**
@@ -27,6 +28,7 @@ export function DayColumn({
   onAddActivity,
   onEditActivity,
   onDeleteActivity,
+  onRemoveDay,
 }: DayColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: day.id,
@@ -58,13 +60,26 @@ export function DayColumn({
               {format(new Date(day.date), 'MMMM d, yyyy')}
             </p>
           </div>
-          <div className="text-right">
-            <p className="text-2xl font-bold text-primary">
-              {day.activities.length}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {day.activities.length === 1 ? 'activity' : 'activities'}
-            </p>
+          <div className="flex items-start gap-2">
+            <div className="text-right">
+              <p className="text-2xl font-bold text-primary">
+                {day.activities.length}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {day.activities.length === 1 ? 'activity' : 'activities'}
+              </p>
+            </div>
+            {onRemoveDay && (
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={`Remove day ${dayIndex + 1}`}
+                className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                onClick={() => onRemoveDay(day.id)}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
       </CardHeader>

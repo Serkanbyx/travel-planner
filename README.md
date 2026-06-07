@@ -10,11 +10,12 @@ A modern, feature-rich travel planning application built with React, TypeScript,
 
 ## Features
 
-- **Smart City Integration**: Automatically fetches beautiful city images from Unsplash and informative summaries from Wikipedia for any destination
-- **Daily Itinerary Management**: Organize your trip activities day-by-day with an intuitive timeline view
+- **Smart City Integration**: Automatically fetches beautiful city images from Unsplash and informative summaries from Wikipedia (localized to your browser language, falling back to English) for any destination
+- **Daily Itinerary Management**: Organize your trip activities day-by-day with an intuitive timeline view; add or remove days on the fly
 - **Drag & Drop Interface**: Seamlessly reorganize activities between days or reorder within the same day using smooth drag-and-drop
 - **Activity Categories**: Categorize your activities (sightseeing, food, transport, accommodation, entertainment, shopping) with visual indicators
-- **Multiple Export Formats**: Export your complete travel plans as JSON (backup), Text (readable), or HTML/PDF (printable)
+- **Full Plan Editing**: Edit a plan's destination, dates, and description at any time — activities on dates that stay in range are preserved
+- **Import & Export**: Export plans as JSON (backup), Text (readable), or HTML/PDF (printable), and re-import them later from a JSON backup
 - **Responsive Design**: Fully optimized for desktop, tablet, and mobile devices
 - **Persistent Storage**: All plans are automatically saved to your browser's local storage
 - **Modern UI Components**: Built with shadcn/ui for a clean, accessible, and consistent user experience
@@ -55,8 +56,8 @@ Before you begin, ensure you have the following installed:
 1. **Clone the repository**
 
 ```bash
-git clone https://github.com/Serkanbyx/s2.8_Travel-Planner.git
-cd s2.8_Travel-Planner
+git clone https://github.com/Serkanbyx/travel-planner.git
+cd travel-planner
 ```
 
 2. **Install dependencies**
@@ -118,6 +119,12 @@ npm run preview
    - **Notes**: Additional details or reminders
 4. Click **"Add Activity"** to save
 
+### Editing a Plan and Managing Days
+
+- **Edit Plan**: Open a plan and click **"Edit"** to change the destination, dates, or description. Activities on dates that remain within the new range are preserved.
+- **Add Day**: Click the **"Add Day"** card at the end of the itinerary to append the next day.
+- **Remove Day**: Click the trash icon on a day column header to remove that day (available when more than one day exists).
+
 ### Reorganizing Your Schedule
 
 - **Drag & Drop**: Click and hold any activity card, then drag it to a new position
@@ -131,6 +138,12 @@ npm run preview
    - **HTML**: Beautiful printable format (save as PDF from your browser's print dialog)
    - **Text**: Simple plain text format for sharing
    - **JSON**: Data backup format for importing later
+
+### Importing a Plan
+
+1. On the plans page, click **"Import"** (or **"Import from JSON"** when you have no plans yet)
+2. Select a previously exported `.json` plan file
+3. The plan is added to your list with fresh identifiers and opened automatically
 
 ## How It Works?
 
@@ -197,11 +210,16 @@ src/
 └── types/              # TypeScript type definitions
 ```
 
+> Looking for the original step-by-step roadmap used to build this app? See the [Build Guide](docs/build-guide.md).
+
 ## API Configuration
 
-### Unsplash API (Optional)
+### Unsplash API (Recommended)
 
-The app works without an API key using Unsplash Source. For higher quality images and more requests:
+City cover images are fetched from the Unsplash API. An access key is required —
+without it, the app gracefully falls back to a colorful gradient placeholder for
+each city (the legacy anonymous `source.unsplash.com` endpoint was discontinued
+by Unsplash in 2024). To enable images:
 
 1. Create a free developer account at [unsplash.com/developers](https://unsplash.com/developers)
 2. Create a new application to get your Access Key
@@ -211,21 +229,28 @@ The app works without an API key using Unsplash Source. For higher quality image
 VITE_UNSPLASH_ACCESS_KEY=your_access_key_here
 ```
 
+> ⚠️ Never commit your `.env` file. It is already listed in `.gitignore`.
+
 ### Wikipedia API
 
-The Wikipedia API is used without authentication to fetch city summaries. No configuration required.
+The Wikipedia API is used without authentication to fetch city summaries. The
+language edition is chosen automatically from your browser locale (Turkish or
+English), falling back to English when no localized article is found. No
+configuration required.
 
 ## Features in Detail
 
 ### Completed Features
 
 ✅ Create, edit, and delete travel plans  
+✅ Add and remove days within a plan  
 ✅ Add, edit, and delete daily activities  
 ✅ Drag and drop activity reorganization  
 ✅ Multiple activity categories with icons  
 ✅ Export plans to HTML, Text, and JSON  
+✅ Import plans from a JSON backup  
 ✅ Automatic city images from Unsplash  
-✅ City summaries from Wikipedia  
+✅ Localized city summaries from Wikipedia  
 ✅ Responsive mobile-first design  
 ✅ Persistent local storage  
 ✅ Form validation with Zod  
@@ -238,7 +263,6 @@ The Wikipedia API is used without authentication to fetch city summaries. No con
 - [ ] Map integration with location markers
 - [ ] Weather forecast integration
 - [ ] Trip sharing via unique links
-- [ ] Import plans from JSON backup
 
 ## Contributing
 
@@ -277,7 +301,7 @@ git push origin feature/amazing-feature
 
 5. **Open** a Pull Request
 
-Please read our [Contributing Guidelines](CONTRIBUTING.md) and [Code of Conduct](CODE_OF_CONDUCT.md) before contributing.
+Please read our [Contributing Guidelines](.github/CONTRIBUTING.md) and [Code of Conduct](.github/CODE_OF_CONDUCT.md) before contributing.
 
 ## License
 
@@ -307,8 +331,8 @@ You are free to use, modify, and distribute this project for personal or commerc
 
 Have questions or suggestions? Feel free to reach out!
 
-- 🐛 **Report a Bug**: [Open an Issue](https://github.com/Serkanbyx/s2.8_Travel-Planner/issues)
-- 💡 **Request a Feature**: [Open a Feature Request](https://github.com/Serkanbyx/s2.8_Travel-Planner/issues/new?template=feature_request.yml)
+- 🐛 **Report a Bug**: [Open an Issue](https://github.com/Serkanbyx/travel-planner/issues)
+- 💡 **Request a Feature**: [Open a Feature Request](https://github.com/Serkanbyx/travel-planner/issues/new?template=feature_request.yml)
 - 📧 **Email**: [serkanbyx1@gmail.com](mailto:serkanbyx1@gmail.com)
 - 🌐 **Website**: [serkanbayraktar.com](https://serkanbayraktar.com/)
 

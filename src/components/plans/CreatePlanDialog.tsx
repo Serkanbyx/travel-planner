@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -39,16 +39,19 @@ interface CreatePlanDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: PlanFormData) => void;
+  initialData?: PlanFormData | null;
 }
 
 /**
- * Dialog for creating a new travel plan
+ * Dialog for creating or editing a travel plan
  */
 export function CreatePlanDialog({
   open,
   onOpenChange,
   onSubmit,
+  initialData,
 }: CreatePlanDialogProps) {
+  const isEditing = !!initialData;
   const [startDateOpen, setStartDateOpen] = useState(false);
   const [endDateOpen, setEndDateOpen] = useState(false);
 
@@ -67,6 +70,16 @@ export function CreatePlanDialog({
       description: '',
     },
   });
+
+  // Prefill the form when editing, or clear it when creating.
+  useEffect(() => {
+    if (!open) return;
+    if (initialData) {
+      reset(initialData);
+    } else {
+      reset({ city: '', country: '', description: '' });
+    }
+  }, [open, initialData, reset]);
 
   const startDate = watch('startDate');
   const endDate = watch('endDate');
@@ -87,9 +100,13 @@ export function CreatePlanDialog({
       <DialogContent className="sm:max-w-[500px]">
         <form onSubmit={handleSubmit(onFormSubmit)}>
           <DialogHeader>
-            <DialogTitle>Create New Travel Plan</DialogTitle>
+            <DialogTitle>
+              {isEditing ? 'Edit Travel Plan' : 'Create New Travel Plan'}
+            </DialogTitle>
             <DialogDescription>
-              Enter the details of your trip. You can add activities after creating the plan.
+              {isEditing
+                ? 'Update your trip details. Activities on dates that stay in range are kept.'
+                : 'Enter the details of your trip. You can add activities after creating the plan.'}
             </DialogDescription>
           </DialogHeader>
 
@@ -214,7 +231,13 @@ export function CreatePlanDialog({
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Creating...' : 'Create Plan'}
+              {isSubmitting
+                ? isEditing
+                  ? 'Saving...'
+                  : 'Creating...'
+                : isEditing
+                ? 'Save Changes'
+                : 'Create Plan'}
             </Button>
           </DialogFooter>
         </form>

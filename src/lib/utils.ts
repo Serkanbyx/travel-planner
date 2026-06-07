@@ -9,10 +9,14 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * Generates a unique ID
+ * Generates a unique ID using the native crypto API, with a safe fallback
+ * for older environments.
  */
 export function generateId(): string {
-  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+    return crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
 }
 
 /**

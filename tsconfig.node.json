@@ -15,6 +15,8 @@
     "composite": true,
     "emitDeclarationOnly": true,
     "declaration": true,
+    "outDir": "./node_modules/.cache/tsc/node",
+    "tsBuildInfoFile": "./node_modules/.cache/tsc/tsconfig.node.tsbuildinfo",
 
     /* Linting */
     "strict": true,

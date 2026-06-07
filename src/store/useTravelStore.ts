@@ -10,8 +10,10 @@ interface TravelState {
   // Plan actions
   addPlan: (data: PlanFormData) => string;
   updatePlan: (id: string, data: Partial<TravelPlan>) => void;
+  editPlan: (id: string, data: PlanFormData) => void;
   deletePlan: (id: string) => void;
   getPlan: (id: string) => TravelPlan | undefined;
+  importPlan: (plan: TravelPlan) => string;
   
   // Day actions
   addDay: (planId: string, date: string) => void;
@@ -31,6 +33,15 @@ interface TravelState {
   reorderActivities: (planId: string, dayId: string, activeId: string, overId: string) => void;
 }
 
+// Builds an ordered list of empty days for the given date range.
+function buildDays(startDate: Date, endDate: Date): Day[] {
+  return eachDayOfInterval({ start: startDate, end: endDate }).map((date) => ({
+    id: generateId(),
+    date: format(date, 'yyyy-MM-dd'),
+    activities: [],
+  }));
+}
+
 export const useTravelStore = create<TravelState>()(
   persist(
     (set, get) => ({
@@ -40,16 +51,8 @@ export const useTravelStore = create<TravelState>()(
       addPlan: (data: PlanFormData) => {
         const id = generateId();
         const now = new Date().toISOString();
-        
-        // Generate days for the date range
-        const days: Day[] = eachDayOfInterval({
-          start: data.startDate,
-          end: data.endDate,
-        }).map((date) => ({
-          id: generateId(),
-          date: format(date, 'yyyy-MM-dd'),
-          activities: [],
-        }));
+
+        const days = buildDays(data.startDate, data.endDate);
 
         const newPlan: TravelPlan = {
           id,
@@ -81,6 +84,43 @@ export const useTravelStore = create<TravelState>()(
         }));
       },
 
+      // Edit a plan's core details, reconciling days when the date range
+      // changes. Activities on dates that remain in range are preserved.
+      editPlan: (id: string, data: PlanFormData) => {
+        set((state) => ({
+          plans: state.plans.map((plan) => {
+            if (plan.id !== id) return plan;
+
+            const newDates = buildDays(data.startDate, data.endDate).map(
+              (day) => day.date
+            );
+            const existingByDate = new Map(
+              plan.days.map((day) => [day.date, day])
+            );
+
+            const days: Day[] = newDates.map(
+              (date) =>
+                existingByDate.get(date) ?? {
+                  id: generateId(),
+                  date,
+                  activities: [],
+                }
+            );
+
+            return {
+              ...plan,
+              city: data.city,
+              country: data.country,
+              description: data.description,
+              startDate: format(data.startDate, 'yyyy-MM-dd'),
+              endDate: format(data.endDate, 'yyyy-MM-dd'),
+              days,
+              updatedAt: new Date().toISOString(),
+            };
+          }),
+        }));
+      },
+
       // Delete a plan
       deletePlan: (id: string) => {
         set((state) => ({
@@ -91,6 +131,34 @@ export const useTravelStore = create<TravelState>()(
       // Get a specific plan
       getPlan: (id: string) => {
         return get().plans.find((plan) => plan.id === id);
+      },
+
+      // Import a plan (e.g. from a JSON backup) with fresh identifiers to
+      // avoid collisions with existing plans.
+      importPlan: (plan: TravelPlan) => {
+        const id = generateId();
+        const now = new Date().toISOString();
+
+        const importedPlan: TravelPlan = {
+          ...plan,
+          id,
+          days: plan.days.map((day) => ({
+            ...day,
+            id: generateId(),
+            activities: day.activities.map((activity) => ({
+              ...activity,
+              id: generateId(),
+            })),
+          })),
+          createdAt: now,
+          updatedAt: now,
+        };
+
+        set((state) => ({
+          plans: [...state.plans, importedPlan],
+        }));
+
+        return id;
       },
 
       // Add a new day to a plan

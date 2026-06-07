@@ -13,7 +13,7 @@ import {
   DragOverEvent,
 } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
-import { format } from 'date-fns';
+import { addDays, format, parseISO } from 'date-fns';
 import {
   ArrowLeft,
   Calendar,
@@ -23,13 +23,16 @@ import {
   FileJson,
   FileType,
   Info,
+  Pencil,
+  CalendarPlus,
 } from 'lucide-react';
 import { useTravelStore } from '@/store/useTravelStore';
-import { Activity, ActivityFormData } from '@/types';
+import { Activity, ActivityFormData, PlanFormData } from '@/types';
 import { Layout } from '@/components/layout/Layout';
 import { DayColumn } from '@/components/activities/DayColumn';
 import { ActivityCard } from '@/components/activities/ActivityCard';
 import { ActivityForm } from '@/components/activities/ActivityForm';
+import { CreatePlanDialog } from '@/components/plans/CreatePlanDialog';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -51,6 +54,9 @@ export function PlanDetailPage() {
   const {
     getPlan,
     updatePlan,
+    editPlan,
+    addDay,
+    removeDay,
     addActivity,
     updateActivity,
     deleteActivity,
@@ -66,6 +72,7 @@ export function PlanDetailPage() {
   const [activeActivity, setActiveActivity] = useState<Activity | null>(null);
   const [coverImage, setCoverImage] = useState<string>('');
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [editPlanOpen, setEditPlanOpen] = useState(false);
 
   // Drag and drop sensors
   const sensors = useSensors(
@@ -127,66 +134,57 @@ export function PlanDetailPage() {
     }
   };
 
+  // Resolve the day id that currently contains the given activity id.
+  const findDayIdByActivity = (activityId: string) =>
+    plan.days.find((day) => day.activities.some((a) => a.id === activityId))?.id;
+
+  // While dragging, only handle moving an activity into a *different* day so it
+  // visually lands in the target column. Reordering within a day is deferred to
+  // drag end to avoid excessive store updates.
   const handleDragOver = (event: DragOverEvent) => {
     const { active, over } = event;
     if (!over) return;
 
     const activeData = active.data.current;
     const overData = over.data.current;
-
-    if (!activeData || activeData.type !== 'activity') return;
+    if (activeData?.type !== 'activity') return;
 
     const activeId = active.id as string;
-
-    // Find which day the active activity belongs to
-    const activeDayId = plan.days.find((day) =>
-      day.activities.some((a) => a.id === activeId)
-    )?.id;
-
+    const activeDayId = findDayIdByActivity(activeId);
     if (!activeDayId) return;
 
-    // Dropping on a day column
-    if (overData?.type === 'day') {
-      const overDayId = overData.day.id;
-      
-      if (activeDayId !== overDayId) {
-        moveActivity(
-          plan.id,
-          activeDayId,
-          overDayId,
-          activeId,
-          plan.days.find((d) => d.id === overDayId)?.activities.length || 0
-        );
-      }
-    }
+    const overDayId =
+      overData?.type === 'day'
+        ? overData.day.id
+        : findDayIdByActivity(over.id as string);
 
-    // Dropping on another activity
-    if (overData?.type === 'activity') {
-      const overId = over.id as string;
-      const overDayId = plan.days.find((day) =>
-        day.activities.some((a) => a.id === overId)
-      )?.id;
+    if (!overDayId || overDayId === activeDayId) return;
 
-      if (!overDayId) return;
+    const targetDay = plan.days.find((d) => d.id === overDayId);
+    const overIndex =
+      overData?.type === 'activity'
+        ? targetDay?.activities.findIndex((a) => a.id === over.id) ?? 0
+        : targetDay?.activities.length ?? 0;
 
-      if (activeDayId === overDayId) {
-        // Same day - reorder
-        if (activeId !== overId) {
-          reorderActivities(plan.id, activeDayId, activeId, overId);
-        }
-      } else {
-        // Different day - move
-        const overIndex = plan.days
-          .find((d) => d.id === overDayId)
-          ?.activities.findIndex((a) => a.id === overId);
-
-        moveActivity(plan.id, activeDayId, overDayId, activeId, overIndex ?? 0);
-      }
-    }
+    moveActivity(plan.id, activeDayId, overDayId, activeId, overIndex);
   };
 
-  const handleDragEnd = (_event: DragEndEvent) => {
+  // Finalize the drag: reorder within the same day once the user drops.
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
     setActiveActivity(null);
+
+    if (!over || active.id === over.id) return;
+    if (over.data.current?.type !== 'activity') return;
+
+    const activeId = active.id as string;
+    const overId = over.id as string;
+    const activeDayId = findDayIdByActivity(activeId);
+    const overDayId = findDayIdByActivity(overId);
+
+    if (activeDayId && activeDayId === overDayId) {
+      reorderActivities(plan.id, activeDayId, activeId, overId);
+    }
   };
 
   // Activity handlers
@@ -247,6 +245,35 @@ export function PlanDetailPage() {
     });
   };
 
+  // Day handlers
+  const handleAddDay = () => {
+    const lastDay = plan.days[plan.days.length - 1];
+    const nextDate = lastDay
+      ? addDays(parseISO(lastDay.date), 1)
+      : parseISO(plan.startDate);
+    addDay(plan.id, format(nextDate, 'yyyy-MM-dd'));
+    toast({ title: 'Day added', description: 'A new day was added to your itinerary.' });
+  };
+
+  const handleRemoveDay = (dayId: string) => {
+    removeDay(plan.id, dayId);
+    toast({ title: 'Day removed', description: 'The day was removed from your itinerary.' });
+  };
+
+  // Plan edit handler
+  const handleEditPlan = (data: PlanFormData) => {
+    editPlan(plan.id, data);
+    toast({ title: 'Plan updated', description: 'Your trip details have been saved.' });
+  };
+
+  const editInitialData: PlanFormData = {
+    city: plan.city,
+    country: plan.country,
+    description: plan.description,
+    startDate: parseISO(plan.startDate),
+    endDate: parseISO(plan.endDate),
+  };
+
   const gradient = getCityGradient(plan.city);
   const selectedDay = plan.days.find((d) => d.id === selectedDayId);
 
@@ -300,6 +327,11 @@ export function PlanDetailPage() {
               </div>
             </div>
 
+            <div className="flex items-center gap-2">
+            <Button variant="secondary" onClick={() => setEditPlanOpen(true)}>
+              <Pencil className="h-4 w-4 mr-2" />
+              Edit
+            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="secondary">
@@ -322,6 +354,7 @@ export function PlanDetailPage() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            </div>
           </div>
         </div>
       </div>
@@ -373,8 +406,20 @@ export function PlanDetailPage() {
                 onAddActivity={handleAddActivity}
                 onEditActivity={handleEditActivity}
                 onDeleteActivity={handleDeleteActivity}
+                onRemoveDay={plan.days.length > 1 ? handleRemoveDay : undefined}
               />
             ))}
+
+            <div className="flex-shrink-0 flex items-center">
+              <Button
+                variant="outline"
+                onClick={handleAddDay}
+                className="h-full min-h-[200px] w-32 border-dashed flex flex-col gap-2"
+              >
+                <CalendarPlus className="h-6 w-6" />
+                Add Day
+              </Button>
+            </div>
           </div>
 
           <DragOverlay>
@@ -398,6 +443,14 @@ export function PlanDetailPage() {
         onSubmit={handleActivitySubmit}
         activity={editingActivity}
         dayDate={selectedDay?.date}
+      />
+
+      {/* Edit Plan Dialog */}
+      <CreatePlanDialog
+        open={editPlanOpen}
+        onOpenChange={setEditPlanOpen}
+        onSubmit={handleEditPlan}
+        initialData={editInitialData}
       />
     </Layout>
   );

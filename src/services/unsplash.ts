@@ -1,25 +1,26 @@
 import { UnsplashImage } from '@/types';
 
-// Unsplash API configuration
-// For demo purposes, using Unsplash Source (no API key required)
-// For production, use Unsplash API with your access key
+// Unsplash API access key. When absent, the app gracefully falls back to a
+// gradient placeholder instead of relying on the deprecated source.unsplash.com
+// endpoint (shut down by Unsplash in 2024).
 const UNSPLASH_ACCESS_KEY = import.meta.env.VITE_UNSPLASH_ACCESS_KEY || '';
 
 /**
- * Fetches a city cover image from Unsplash
+ * Fetches a city cover image from the Unsplash API.
  * @param city - City name to search for
- * @returns Promise with image URL or fallback
+ * @returns Promise with an image URL, or an empty string to signal the caller
+ *          should use a gradient placeholder
  */
 export async function fetchCityImage(city: string): Promise<string> {
-  // If no API key, use Unsplash Source (free, no auth required)
   if (!UNSPLASH_ACCESS_KEY) {
-    // Using Unsplash Source for demo
-    return `https://source.unsplash.com/800x600/?${encodeURIComponent(city)},city,travel`;
+    return '';
   }
 
   try {
     const response = await fetch(
-      `https://api.unsplash.com/search/photos?query=${encodeURIComponent(city + ' city')}&per_page=1&orientation=landscape`,
+      `https://api.unsplash.com/search/photos?query=${encodeURIComponent(
+        `${city} city`
+      )}&per_page=1&orientation=landscape`,
       {
         headers: {
           Authorization: `Client-ID ${UNSPLASH_ACCESS_KEY}`,
@@ -28,27 +29,21 @@ export async function fetchCityImage(city: string): Promise<string> {
     );
 
     if (!response.ok) {
-      throw new Error('Failed to fetch image from Unsplash');
+      throw new Error(`Unsplash request failed with status ${response.status}`);
     }
 
     const data = await response.json();
-    
-    if (data.results && data.results.length > 0) {
-      const image: UnsplashImage = data.results[0];
-      return image.urls.regular;
-    }
+    const image: UnsplashImage | undefined = data.results?.[0];
 
-    // Fallback to Unsplash Source if no results
-    return `https://source.unsplash.com/800x600/?${encodeURIComponent(city)},city`;
+    return image?.urls.regular ?? '';
   } catch (error) {
     console.error('Error fetching city image:', error);
-    // Fallback to gradient placeholder
     return '';
   }
 }
 
 /**
- * Gets a placeholder gradient based on city name
+ * Gets a deterministic placeholder gradient based on the city name.
  * @param city - City name
  * @returns CSS gradient string
  */
@@ -64,7 +59,8 @@ export function getCityGradient(city: string): string {
     'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)',
   ];
 
-  // Use city name to consistently pick a gradient
-  const index = city.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const index = city
+    .split('')
+    .reduce((acc, char) => acc + char.charCodeAt(0), 0);
   return gradients[index % gradients.length];
 }

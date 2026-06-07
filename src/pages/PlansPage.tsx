@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Map, Search } from 'lucide-react';
+import { Plus, Map, Search, Upload } from 'lucide-react';
 import { useTravelStore } from '@/store/useTravelStore';
-import { PlanFormData } from '@/types';
+import { PlanFormData, TravelPlan } from '@/types';
 import { Layout } from '@/components/layout/Layout';
 import { PlanCard } from '@/components/plans/PlanCard';
 import { CreatePlanDialog } from '@/components/plans/CreatePlanDialog';
@@ -11,13 +11,29 @@ import { Input } from '@/components/ui/input';
 import { toast } from '@/hooks/useToast';
 
 /**
+ * Minimal runtime validation for an imported plan JSON file.
+ */
+function isValidPlan(value: unknown): value is TravelPlan {
+  if (typeof value !== 'object' || value === null) return false;
+  const plan = value as Partial<TravelPlan>;
+  return (
+    typeof plan.city === 'string' &&
+    typeof plan.country === 'string' &&
+    typeof plan.startDate === 'string' &&
+    typeof plan.endDate === 'string' &&
+    Array.isArray(plan.days)
+  );
+}
+
+/**
  * Page displaying all travel plans
  */
 export function PlansPage() {
   const navigate = useNavigate();
-  const { plans, addPlan, deletePlan } = useTravelStore();
+  const { plans, addPlan, deletePlan, importPlan } = useTravelStore();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleCreatePlan = (data: PlanFormData) => {
     const planId = addPlan(data);
@@ -26,6 +42,36 @@ export function PlansPage() {
       description: `Your trip to ${data.city} has been created.`,
     });
     navigate(`/plan/${planId}`);
+  };
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImportFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    try {
+      const parsed = JSON.parse(await file.text());
+      if (!isValidPlan(parsed)) {
+        throw new Error('Invalid plan format');
+      }
+      const planId = importPlan(parsed);
+      toast({
+        title: 'Plan imported',
+        description: `Your trip to ${parsed.city} has been imported.`,
+      });
+      navigate(`/plan/${planId}`);
+    } catch (error) {
+      console.error('Failed to import plan:', error);
+      toast({
+        title: 'Import failed',
+        description: 'The selected file is not a valid travel plan JSON.',
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleDeletePlan = (id: string) => {
@@ -59,10 +105,16 @@ export function PlansPage() {
             <p className="text-xl text-muted-foreground max-w-md mb-8">
               Create detailed travel itineraries, organize daily activities, and export your plans.
             </p>
-            <Button size="lg" onClick={() => setCreateDialogOpen(true)}>
-              <Plus className="h-5 w-5 mr-2" />
-              Create Your First Plan
-            </Button>
+            <div className="flex flex-col sm:flex-row items-center gap-3">
+              <Button size="lg" onClick={() => setCreateDialogOpen(true)}>
+                <Plus className="h-5 w-5 mr-2" />
+                Create Your First Plan
+              </Button>
+              <Button size="lg" variant="outline" onClick={handleImportClick}>
+                <Upload className="h-5 w-5 mr-2" />
+                Import from JSON
+              </Button>
+            </div>
           </div>
         ) : (
           <>
@@ -75,15 +127,21 @@ export function PlansPage() {
                 </p>
               </div>
 
-              {/* Search */}
-              <div className="relative w-full sm:w-64">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search destinations..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
-                />
+              <div className="flex items-center gap-3">
+                {/* Search */}
+                <div className="relative w-full sm:w-64">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search destinations..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+                <Button variant="outline" onClick={handleImportClick}>
+                  <Upload className="h-4 w-4 mr-2" />
+                  Import
+                </Button>
               </div>
             </div>
 
@@ -108,6 +166,15 @@ export function PlansPage() {
           </>
         )}
       </div>
+
+      {/* Hidden file input for JSON import */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="application/json,.json"
+        className="hidden"
+        onChange={handleImportFile}
+      />
 
       {/* Create Plan Dialog */}
       <CreatePlanDialog

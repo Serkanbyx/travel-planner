@@ -72,6 +72,8 @@ export function ActivityCard({ activity, onEdit, onDelete }: ActivityCardProps) 
     >
       {/* Drag Handle */}
       <button
+        type="button"
+        aria-label={`Reorder ${activity.title}`}
         className="flex-shrink-0 p-1 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground touch-none"
         {...attributes}
         {...listeners}
@@ -116,6 +118,7 @@ export function ActivityCard({ activity, onEdit, onDelete }: ActivityCardProps) 
             <Button
               variant="ghost"
               size="icon"
+              aria-label={`Edit ${activity.title}`}
               className="h-8 w-8"
               onClick={() => onEdit(activity)}
             >
@@ -124,6 +127,7 @@ export function ActivityCard({ activity, onEdit, onDelete }: ActivityCardProps) 
             <Button
               variant="ghost"
               size="icon"
+              aria-label={`Delete ${activity.title}`}
               className="h-8 w-8 text-destructive hover:text-destructive"
               onClick={() => onDelete(activity.id)}
             >

@@ -1,27 +1,45 @@
 import { WikipediaResponse } from '@/types';
 
 /**
- * Fetches a summary about a city from Wikipedia API
+ * Supported Wikipedia language editions.
+ */
+export type WikipediaLang = 'en' | 'tr';
+
+/**
+ * Resolves the preferred Wikipedia language from the browser, defaulting to
+ * English when the locale is not supported.
+ */
+function getDefaultLang(): WikipediaLang {
+  if (typeof navigator !== 'undefined' && navigator.language?.startsWith('tr')) {
+    return 'tr';
+  }
+  return 'en';
+}
+
+/**
+ * Fetches a summary about a city from the Wikipedia API.
  * @param city - City name to search for
  * @param country - Country name for more accurate results
+ * @param lang - Wikipedia language edition (defaults to the browser locale)
  * @returns Promise with city summary or null
  */
 export async function fetchCitySummary(
   city: string,
-  country?: string
+  country?: string,
+  lang: WikipediaLang = getDefaultLang()
 ): Promise<WikipediaResponse | null> {
   const searchQuery = country ? `${city}, ${country}` : city;
-  
+  const baseUrl = `https://${lang}.wikipedia.org`;
+
   try {
-    // First, search for the page
     const searchResponse = await fetch(
-      `https://en.wikipedia.org/w/api.php?` +
-      `action=query&` +
-      `list=search&` +
-      `srsearch=${encodeURIComponent(searchQuery)}&` +
-      `srlimit=1&` +
-      `format=json&` +
-      `origin=*`
+      `${baseUrl}/w/api.php?` +
+        `action=query&` +
+        `list=search&` +
+        `srsearch=${encodeURIComponent(searchQuery)}&` +
+        `srlimit=1&` +
+        `format=json&` +
+        `origin=*`
     );
 
     if (!searchResponse.ok) {
@@ -29,16 +47,19 @@ export async function fetchCitySummary(
     }
 
     const searchData = await searchResponse.json();
-    
+
     if (!searchData.query?.search?.length) {
+      // Fall back to English when the localized edition has no match.
+      if (lang !== 'en') {
+        return fetchCitySummary(city, country, 'en');
+      }
       return null;
     }
 
     const pageTitle = searchData.query.search[0].title;
 
-    // Then, get the page summary
     const summaryResponse = await fetch(
-      `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(pageTitle)}`
+      `${baseUrl}/api/rest_v1/page/summary/${encodeURIComponent(pageTitle)}`
     );
 
     if (!summaryResponse.ok) {
@@ -61,22 +82,23 @@ export async function fetchCitySummary(
 }
 
 /**
- * Fetches a short extract (first few sentences) about a city
+ * Fetches a short extract (first couple of sentences) about a city.
  * @param city - City name
  * @param country - Optional country name
+ * @param lang - Optional Wikipedia language edition
  * @returns Promise with short description or empty string
  */
 export async function fetchCityShortDescription(
   city: string,
-  country?: string
+  country?: string,
+  lang?: WikipediaLang
 ): Promise<string> {
-  const summary = await fetchCitySummary(city, country);
-  
+  const summary = await fetchCitySummary(city, country, lang);
+
   if (!summary?.extract) {
     return '';
   }
 
-  // Get first 2-3 sentences
   const sentences = summary.extract.split(/(?<=[.!?])\s+/);
   return sentences.slice(0, 2).join(' ');
 }
