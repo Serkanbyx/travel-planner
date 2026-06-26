@@ -26,6 +26,30 @@ Experience the application in action:
 
 [🌍 View Live Demo](https://travel-plannerrr.netlify.app/plans)
 
+> **Try the demo:** On the live site, click **Import** and select [`docs/demo-paris-plan.json`](docs/demo-paris-plan.json) to load a sample Paris itinerary with activities.
+
+## Screenshots
+
+### Empty State — Get Started
+
+![Empty state — create your first travel plan](docs/screenshots/empty-state.png)
+
+### My Travel Plans Dashboard
+
+![Plans dashboard with multiple destinations](docs/screenshots/plans-page.png)
+
+### Daily Itinerary with Drag & Drop
+
+![Paris plan detail with day-by-day activities](docs/screenshots/plan-detail.png)
+
+### Create a New Plan
+
+![Create new travel plan dialog](docs/screenshots/create-plan-dialog.png)
+
+### Add an Activity
+
+![Add activity form with categories and notes](docs/screenshots/add-activity-dialog.png)
+
 ## Technologies
 
 - **React 18**: Modern React with hooks and functional components

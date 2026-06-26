@@ -1,0 +1,95 @@
+{
+  "id": "demo-import-paris",
+  "city": "Paris",
+  "country": "France",
+  "description": "A romantic week exploring art, cuisine, and iconic landmarks in the City of Light.",
+  "coverImage": "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800&q=80",
+  "wikiSummary": "Paris is the capital and largest city of France. Known for the Eiffel Tower, Louvre Museum, and world-class cuisine.",
+  "startDate": "2026-07-10",
+  "endDate": "2026-07-12",
+  "createdAt": "2026-06-01T10:00:00.000Z",
+  "updatedAt": "2026-06-01T10:00:00.000Z",
+  "days": [
+    {
+      "id": "day-paris-1",
+      "date": "2026-07-10",
+      "activities": [
+        {
+          "id": "act-1",
+          "title": "Eiffel Tower Visit",
+          "time": "09:00",
+          "category": "sightseeing",
+          "notes": "Book skip-the-line tickets in advance",
+          "location": "Champ de Mars"
+        },
+        {
+          "id": "act-2",
+          "title": "Lunch at Café de Flore",
+          "time": "12:30",
+          "category": "food",
+          "notes": "Try the croque monsieur",
+          "location": "Saint-Germain"
+        },
+        {
+          "id": "act-3",
+          "title": "Seine River Cruise",
+          "time": "15:00",
+          "category": "entertainment",
+          "notes": "Sunset cruise recommended",
+          "location": "Port de la Bourdonnais"
+        }
+      ]
+    },
+    {
+      "id": "day-paris-2",
+      "date": "2026-07-11",
+      "activities": [
+        {
+          "id": "act-4",
+          "title": "Louvre Museum",
+          "time": "10:00",
+          "category": "sightseeing",
+          "notes": "Focus on Mona Lisa & Venus de Milo",
+          "location": "Rue de Rivoli"
+        },
+        {
+          "id": "act-5",
+          "title": "Metro to Montmartre",
+          "time": "14:00",
+          "category": "transport",
+          "location": "Line 2"
+        },
+        {
+          "id": "act-6",
+          "title": "Sacré-Cœur Basilica",
+          "time": "14:30",
+          "category": "sightseeing",
+          "notes": "Panoramic city views",
+          "location": "Montmartre"
+        }
+      ]
+    },
+    {
+      "id": "day-paris-3",
+      "date": "2026-07-12",
+      "activities": [
+        {
+          "id": "act-7",
+          "title": "Versailles Day Trip",
+          "time": "08:30",
+          "category": "sightseeing",
+          "notes": "RER C train from Paris",
+          "location": "Palace of Versailles"
+        },
+        {
+          "id": "act-8",
+          "title": "Farewell Dinner",
+          "time": "19:00",
+          "category": "food",
+          "notes": "Reservation at Le Jules Verne",
+          "location": "Eiffel Tower"
+        }
+      ]
+    }
+  ]
+}
